@@ -119,7 +119,7 @@ export default function Create({ auth, folder, pageTitle, pageDescription, formU
               </button>
             </div>
             <hr className="mt-2" />
-            <FileIndex files={files} pageTitle="List of files" pageDescription="List of files" />
+            <FileIndex files={files} pageTitle="List of files" pageDescription="List of files" getFiles={reloadFiles} />
           </div>
         </div>
       </div>

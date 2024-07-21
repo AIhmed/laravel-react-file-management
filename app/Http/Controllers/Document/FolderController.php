@@ -80,20 +80,15 @@ class FolderController extends Controller
 
     public function destroy(Request $request, Folder $folder)
     {
-        $user = Auth::user();
         $message = $folder->canBeDeleted();
         if (empty($message)) {
-            $folder->deleteDocuments();
             $folder->delete();
-            $folders = Folder::where('user_id', $user->id);
-            $folders = $folders
-                ->paginate(10)
-                ->onEachSide(2)
-                ->appends(request()->query());
-
-            return redirect()
-                ->route('folder.index')
-                ->with('message', __('The folder was successfully deleted'));
+            $user = Auth::user();
+            $folders = Folder::where('user_id', $user->id)->get();
+            return response()->json([
+                'status' => 200,
+                'folders' => $folders,
+            ]);
         } else {
             throw new Exception($message);
         }

@@ -9,7 +9,9 @@ use App\Models\File;
 use App\Models\Folder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File as FacadesFile;
 use Inertia\Inertia;
+use Exception;
 
 class FileController extends Controller
 {
@@ -89,24 +91,21 @@ class FileController extends Controller
     public function destroy(Request $request, File $file)
     {
         $folder = $file->folder_id;
-        $message = $file->canBeDeleted();
-        if (empty($message)) {
-            $file->deleteDocuments();
-            $file->delete();
-            $files = File::where('folder_id', $folder);
-            $files = $files
-                ->with('folder')
-                ->paginate(10)
-                ->onEachSide(2)
-                ->appends(request()->query());
-
-            return response()->json([
-                'status' => 200,
-                'files' => $files,
-            ]);
-        } else {
-            throw new Exception($message);
+        $file_path = public_path('storage/' . $file->path);
+        if (FacadesFile::exists($file_path)) {
+            FacadesFile::delete($file_path);
         }
+
+        $file->delete();
+        $files = File::where('folder_id', $folder);
+        $files = $files
+            ->with('folder')
+            ->get();
+
+        return response()->json([
+            'status' => 200,
+            'files' => $files,
+        ]);
     }
 
     public function fetch(Request $request, $folder)

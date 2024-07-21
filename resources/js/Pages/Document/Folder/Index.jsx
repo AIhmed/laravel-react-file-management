@@ -3,12 +3,17 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { XCircleIcon } from "@heroicons/react/20/solid/index.js";
 import { PlusCircleIcon } from "@heroicons/react/20/solid/index.js";
 import { PencilSquareIcon } from "@heroicons/react/20/solid";
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import "@/Styles/customSweetAlertStyles.css";
+import { useForm } from '@inertiajs/react';
 
 export default function Index({ auth, folders, pageTitle, pageDescription }) {
-  const destroy = (e, folder) => {
+  const {
+    delete: destroy,
+  } = useForm();
+  const [folderData, setFolderData] = useState(folders);
+  const destroyFolder = (e, folder) => {
     e.preventDefault();
     Swal.fire({
       title: 'Remove record, Are you sure?',
@@ -22,31 +27,38 @@ export default function Index({ auth, folders, pageTitle, pageDescription }) {
         confirmButton: 'swal2-confirm',
         denyButton: 'swal2-deny'
       }
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-
-        destroy(route("folder.destroy", folder.id), {
-          preserveScroll: true,
-          onSuccess: () => {
+        await axios.delete(route("folder.destroy", folder.id))
+          .then((response) => {
             Swal.fire({
               position: 'top-end',
+              toast: true,
               icon: 'success',
               title: 'Record has been removed successfully',
               showConfirmButton: false,
               timer: 1500,
               allowOutsideClick: false,
-            })
-          },
-          onFinish: () => {
-
-          }
-        });
-      } else if (result.isDenied) {
-        Swal.fire('Record is safe', '', 'info')
+            });
+            setFolderData(response.data.folders);
+            return response.data.folders;
+          })
+          .catch((error) => {
+            console.log(error);
+            Swal.fire({
+              toast: true,
+              position: "top",
+              width: 600,
+              icon: "error",
+              title: "Cannot delete folder. The folder has many files",
+              showConfirmButton: false,
+              timerProgressBar: true,
+            });
+          });
       }
-    })
-  };
-  useEffect(() => { console.log(folders.data) });
+    });
+  }
+  useEffect(() => { });
   return (
     <AuthenticatedLayout
       user={auth.user}
@@ -80,7 +92,7 @@ export default function Index({ auth, folders, pageTitle, pageDescription }) {
               </tr>
             </thead>
             <tbody>
-              {folders.map(folder => (
+              {folderData.map(folder => (
                 <>
                   <tr key={folder.id} className="border-t border-gray-300">
                     <td className="py-2 px-4 border">{folder.name}</td>
@@ -91,7 +103,7 @@ export default function Index({ auth, folders, pageTitle, pageDescription }) {
                         className="inline-flex items-center gap-x-1.5 rounded-md bg-red-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
                         onClick={(e) => {
                           e.preventDefault();
-                          destroy(e, folder);
+                          destroyFolder(e, folder);
                         }}
                       >
                         <XCircleIcon className="-ml-0.5 h-5 w-5" aria-hidden="true" />
